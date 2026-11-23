@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — College2Corporate{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold mb-3 text-white">Admin <span class="text-primary">Dashboard</span></h1>
+            <p class="text-secondary fs-5">System overview and management</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-panel p-4 text-center">
+                <div class="fs-1 text-primary mb-2">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">{{ unique_users }}</h3>
+                <p class="text-secondary mb-0">Unique Users</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-panel p-4 text-center">
+                <div class="fs-1 text-success mb-2">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">{{ total_resume_uploads }}</h3>
+                <p class="text-secondary mb-0">Resume Uploads</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-panel p-4 text-center">
+                <div class="fs-1 text-warning mb-2">
+                    <i class="bi bi-calendar-today"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">{{ today_resume_uploads }}</h3>
+                <p class="text-secondary mb-0">Today's Uploads</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-panel p-4 text-center">
+                <div class="fs-1 text-info mb-2">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">{{ total_sessions }}</h3>
+                <p class="text-secondary mb-0">Total Sessions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popular Companies and Roles -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="glass-panel p-4">
+                <h5 class="fw-bold mb-3 text-white">
+                    <i class="bi bi-building me-2"></i>Popular Companies
+                </h5>
+                {% if popular_companies %}
+                    {% for company, count in popular_companies %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white">{{ company }}</span>
+                        <span class="badge bg-primary bg-opacity-25 text-primary">{{ count }} uploads</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-secondary text-center">No resume uploads yet</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-panel p-4">
+                <h5 class="fw-bold mb-3 text-white">
+                    <i class="bi bi-briefcase me-2"></i>Popular Roles
+                </h5>
+                {% if popular_roles %}
+                    {% for role, count in popular_roles %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white">{{ role }}</span>
+                        <span class="badge bg-success bg-opacity-25 text-success">{{ count }} uploads</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-secondary text-center">No resume uploads yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="glass-panel p-5">
+                <h3 class="fw-bold mb-4 text-white">Quick Actions</h3>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-lg w-100 py-3 rounded-pill">
+                            <i class="bi bi-house me-2"></i> Home
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('search') }}" class="btn btn-outline-success btn-lg w-100 py-3 rounded-pill">
+                            <i class="bi bi-search me-2"></i> Search Roles
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('restart') }}" class="btn btn-outline-warning btn-lg w-100 py-3 rounded-pill">
+                            <i class="bi bi-arrow-clockwise me-2"></i> Restart Session
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/admin?password=admin123&clear=true" class="btn btn-outline-danger btn-lg w-100 py-3 rounded-pill">
+                            <i class="bi bi-trash me-2"></i> Clear Dashboard Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="glass-panel p-4">
+                <h5 class="fw-bold mb-3 text-white">
+                    <i class="bi bi-cpu me-2"></i> System Status
+                </h5>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-secondary">Application Status</span>
+                        <span class="text-success">Online</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-secondary">Database</span>
+                        <span class="text-success">Connected</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-secondary">API Endpoints</span>
+                        <span class="text-success">Active</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-panel p-4">
+                <h5 class="fw-bold mb-3 text-white">
+                    <i class="bi bi-info-circle me-2"></i> Application Info
+                </h5>
+                <div class="mb-2">
+                    <span class="text-secondary">Version:</span>
+                    <span class="text-white ms-2">v1.0.0</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-secondary">Framework:</span>
+                    <span class="text-white ms-2">Flask</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-secondary">Database:</span>
+                    <span class="text-white ms-2">SQLite</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-secondary">Environment:</span>
+                    <span class="text-white ms-2">Development</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-secondary">Debug Mode:</span>
+                    <span class="text-success ms-2">Enabled</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent User Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-panel p-4">
+                <h5 class="fw-bold mb-3 text-white">
+                    <i class="bi bi-clock-history me-2"></i>Recent Resume Uploads & Analysis
+                </h5>
+                <div class="list-group list-group-flush">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        {% if activity.get('type') == 'resume_upload' %}
+                        <div class="list-group-item bg-transparent border-secondary border-opacity-25 mb-3">
+                            <div class="row align-items-start">
+                                <div class="col-md-3">
+                                    <div class="text-white fw-bold">
+                                        <i class="bi bi-file-earmark-text text-success me-2"></i>Resume Upload
+                                    </div>
+                                    <small class="text-warning">{{ activity.get('timestamp') }}</small>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info bg-opacity-25 text-info small">
+                                            <i class="bi bi-mortarboard me-1"></i>{{ activity.get('academic_stream') }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="badge bg-primary bg-opacity-25 text-primary small">
+                                            <i class="bi bi-person me-1"></i>{{ activity.get('user_name') }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <span class="text-info small fw-bold">Company:</span>
+                                        <span class="text-warning small">{{ activity.get('company_name') }}</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="text-warning small fw-bold">Role:</span>
+                                        <span class="text-info small">{{ activity.get('role_name') }}</span>
+                                    </div>
+                                    <div class="text-center">
+                                        <span class="badge bg-success bg-opacity-25 text-success">
+                                            {{ activity.get('match_score') }}% Match
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <span class="text-success small fw-bold">Having Skills ({{ activity.get('matched_skills_list', [])|length }}):</span>
+                                        <div class="small">
+                                            {% if activity.get('matched_skills_list') %}
+                                                {% for skill in activity.get('matched_skills_list', [])[:3] %}
+                                                <span class="badge bg-success bg-opacity-25 text-success me-1">{{ skill }}</span>
+                                                {% endfor %}
+                                                {% if activity.get('matched_skills_list', [])|length > 3 %}
+                                                <span class="text-warning">+{{ activity.get('matched_skills_list', [])|length - 3 }} more</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-warning">No skills data available</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <span class="text-danger small fw-bold">Missing Skills ({{ activity.get('missing_skills_list', [])|length }}):</span>
+                                        <div class="small">
+                                            {% if activity.get('missing_skills_list') %}
+                                                {% for skill in activity.get('missing_skills_list', [])[:3] %}
+                                                <span class="badge bg-danger bg-opacity-25 text-danger me-1">{{ skill }}</span>
+                                                {% endfor %}
+                                                {% if activity.get('missing_skills_list', [])|length > 3 %}
+                                                <span class="text-warning">+{{ activity.get('missing_skills_list', [])|length - 3 }} more</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-warning">No missing skills data</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <small class="text-warning">IP: {{ activity.get('ip', 'Unknown')[:8] }}...</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item bg-transparent border-secondary border-opacity-25">
+                            <div class="text-center text-warning py-4">
+                                <i class="bi bi-info-circle me-2"></i>No resume uploads recorded yet
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

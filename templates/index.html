@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}College2Corporate — Bridge Your Skill Gap{% endblock %}
+
+{% block content %}
+<!-- ═══ CINEMATIC INTRO ══════════════════════════════════════════ -->
+<div id="intro-reveal">
+    <div class="reveal-text">College 2 Corporate<br>Skill Mapping System</div>
+</div>
+
+<div id="main-content" style="opacity: 0; transition: opacity 1.5s ease-in-out;">
+    <!-- ═══ HERO: STREAM SELECTION ══════════════════════════════════════ -->
+    <section class="hero-section mesh-bg">
+      <div class="container">
+        <div class="row justify-content-center align-items-center text-center">
+          <div class="col-lg-10">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill mb-4 fade-in">
+              <i class="bi bi-rocket-takeoff-fill me-2"></i> Elevate Your Career
+            </span>
+            <h1 class="impressive-title mb-4">
+              Select Your <span class="gradient-text">Academic Stream</span>
+            </h1>
+            <p class="lead text-secondary mb-5 fs-5 fade-in-delayed mx-auto" style="max-width:700px;">
+              Bridge the gap between your degree and your dream job with AI-powered skill analysis and personalized roadmaps.
+            </p>
+
+            <!-- Stream Cards -->
+            <div class="row g-4 justify-content-center mb-5">
+              <div class="col-md-5">
+                <a href="{{ url_for('set_stream', stream_id=1) }}" class="stream-card-mini">
+                  <div class="stream-icon-wrap"><i class="bi bi-cpu"></i></div>
+                  <div class="stream-title">Engineering</div>
+                </a>
+              </div>
+              <div class="col-md-5">
+                <a href="{{ url_for('set_stream', stream_id=2) }}" class="stream-card-mini">
+                  <div class="stream-icon-wrap"><i class="bi bi-palette"></i></div>
+                  <div class="stream-title">Arts & Science</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="hero-stats justify-content-center">
+              <div class="stat-item">
+                <div class="stat-number">25+</div>
+                <div class="stat-label">Top MNCs</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">100+</div>
+                <div class="stat-label">Job Roles</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Personalized</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ MARQUEE ════════════════════════════════════════════ -->
+    <div class="marquee-wrap" style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); background: transparent;">
+      <div class="marquee-track">
+        {% set companies = ["Google","Microsoft","Amazon","Infosys","TCS","Wipro","Flipkart","Zomato","Swiggy","Accenture",
+                            "Google","Microsoft","Amazon","Infosys","TCS","Wipro","Flipkart","Zomato","Swiggy","Accenture"] %}
+        {% for c in companies %}
+          <div class="marquee-logo">🏢 {{ c }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ HOW IT WORKS ════════════════════════════════════════ -->
+    <section class="section-pad" id="how-it-works">
+      <div class="container">
+        <div class="text-center mb-5">
+          <div class="hero-badge mx-auto mb-3"><i class="bi bi-map"></i> The Process</div>
+          <h2 class="section-title">How It Works</h2>
+          <p class="section-subtitle">4 simple steps to discover your skill gap</p>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-number">1</div>
+              <div class="step-icon">🏢</div>
+              <div class="step-title">Pick a Company</div>
+              <div class="step-desc">Search from 25+ top companies including Google, Zoho, Freshworks, HCL and more.</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-number">2</div>
+              <div class="step-icon">🎯</div>
+              <div class="step-title">Choose Your Role</div>
+              <div class="step-desc">Pick the job role you're targeting — Software Engineer, Data Analyst, HR and more.</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-number">3</div>
+              <div class="step-icon">📄</div>
+              <div class="step-title">Upload Your Skills</div>
+              <div class="step-desc">Upload your resume image or type your skills manually. We focus on South India MNC requirements.</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-number">4</div>
+              <div class="step-icon">📊</div>
+              <div class="step-title">Get Your Report</div>
+              <div class="step-desc">See matched skills, missing skills by priority, a match score, and a curated learning roadmap.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FEATURES ═══════════════════════════════════════════ -->
+    <section class="section-pad" style="border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="section-title">Why <span class="gradient-text">College2Corporate?</span></h2>
+          <p class="section-subtitle">Stop guessing. Start targeting.</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-title">Intelligent Skill Matching</div>
+            <div class="feature-desc">We compare your skills against real industry requirements using set-based analysis — no fluff.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🏆</div>
+            <div class="feature-title">Prioritized Learning</div>
+            <div class="feature-desc">Skills are ranked as Must Know, Good to Have, and Bonus — so you know what to learn first.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📚</div>
+            <div class="feature-title">Free Learning Resources</div>
+            <div class="feature-desc">Every missing skill comes with free, curated links to the best tutorials and courses.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⏱️</div>
+            <div class="feature-title">Time Estimates</div>
+            <div class="feature-desc">Know exactly how long each skill takes — Fast (focused), Moderate, or Slow learner pace.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🎓</div>
+            <div class="feature-title">College Student Focus</div>
+            <div class="feature-desc">Built specifically for final-year students bridging the college-to-industry knowledge gap.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-title">100% Private</div>
+            <div class="feature-desc">Your resume and skills are analyzed locally. Nothing is stored permanently or shared.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ CTA ════════════════════════════════════════════════ -->
+    <section class="section-pad text-center">
+      <div class="container">
+        <div style="max-width:560px; margin:0 auto;">
+          <h2 class="section-title mb-3">Ready to find your <span class="gradient-text">skill gap?</span></h2>
+          <p class="section-subtitle mb-4">Scroll up and select your stream to get started. No sign-up required.</p>
+        </div>
+      </div>
+    </section>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const intro = document.getElementById('intro-reveal');
+        const main = document.getElementById('main-content');
+        
+        // Match the 4.5s CSS animation
+        setTimeout(() => {
+            intro.style.transition = 'opacity 1s ease-in-out';
+            intro.style.opacity = '0';
+            
+            setTimeout(() => {
+                intro.style.display = 'none';
+                main.style.opacity = '1';
+                main.classList.add('fade-in');
+            }, 1000);
+        }, 4500);
+    });
+</script>
+
+<style>
+@keyframes barGrow { from { width: 0; } to { width: 64%; } }
+</style>
+{% endblock %}
