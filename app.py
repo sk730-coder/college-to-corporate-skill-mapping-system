@@ -1,17 +1,29 @@
 import os
 import json
+import hmac
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from database import (
     init_db, search_companies, get_all_companies,
     get_roles_for_company, get_skills_for_role,
-    get_company_by_id, get_role_by_id, estimate_hiring_expectation_months
+    get_company_by_id, get_role_by_id, estimate_hiring_expectation_months,
+    clear_all_activities
 )
 from resume_parser import try_pdf_extract, extract_skills_from_text
 from skill_analyzer import analyze_skills, score_label
 
+# Load settings from a .env file if python-dotenv is installed (optional)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 app = Flask(__name__)
-app.secret_key = "college2corporate_secret_2024"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
+
+# Admin password comes from the environment, never from the source code.
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
 # Enhanced user tracking with detailed activity - GLOBAL VARIABLES
 user_sessions = []
@@ -537,9 +549,8 @@ def restart():
 @app.route('/admin')
 def admin_dashboard():
     print(f"[DEBUG] Admin dashboard accessed!")
-    # Simple admin authentication - in production, use proper authentication
-    admin_password = request.args.get('password')
-    if admin_password != 'admin123':  # Simple password protection
+    # Simple session-based admin authentication (set after a successful login)
+    if not session.get('admin_authenticated'):
         return render_template('admin_login.html')
     
     try:
@@ -619,12 +630,30 @@ def admin_dashboard():
 
 @app.route('/admin/login', methods=['POST'])
 def admin_login():
-    password = request.form.get('password')
-    if password == 'admin123':
+    password = request.form.get('password', '')
+    if not ADMIN_PASSWORD:
+        return render_template('admin_login.html',
+                               error='Admin login is disabled: set the ADMIN_PASSWORD environment variable.')
+    if hmac.compare_digest(password.encode(), ADMIN_PASSWORD.encode()):
         session['admin_authenticated'] = True
-        return redirect(url_for('admin_dashboard') + '?password=admin123')
-    else:
-        return render_template('admin_login.html', error='Invalid password')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin_login.html', error='Invalid password')
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_authenticated', None)
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/clear', methods=['POST'])
+def admin_clear():
+    if not session.get('admin_authenticated'):
+        return redirect(url_for('admin_dashboard'))
+    clear_all_activities()
+    user_activities.clear()
+    user_sessions.clear()
+    return redirect(url_for('admin_dashboard'))
 
 
 @app.before_request

@@ -1,10 +1,20 @@
-import sqlite3
+import pymysql
+import pymysql.cursors
 import os
 import calendar
 import copy
 import re
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'skills.db')
+# ─── MySQL connection settings ───────────────────────────────────────────────
+# Override with environment variables (or a .env file loaded by your shell).
+DB_CONFIG = {
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "port": int(os.environ.get("DB_PORT", "3306")),
+    "user": os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("DB_PASSWORD", ""),
+    "database": os.environ.get("DB_NAME", "skills_db"),
+    "charset": "utf8mb4",
+}
 
 # ─── Skill sets per role ─────────────────────────────────────────────────────
 
@@ -2942,78 +2952,105 @@ def _expanded_seed_data():
     return seed
 
 
+class _Connection:
+    """Thin wrapper so the rest of the code can keep using conn.execute(...)
+    like it did with sqlite3. Rows come back as dicts."""
+
+    def __init__(self, raw):
+        self._raw = raw
+
+    def cursor(self):
+        return self._raw.cursor()
+
+    def execute(self, sql, params=None):
+        cur = self._raw.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self):
+        self._raw.commit()
+
+    def rollback(self):
+        self._raw.rollback()
+
+    def close(self):
+        self._raw.close()
+
+
 def get_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    raw = pymysql.connect(cursorclass=pymysql.cursors.DictCursor, **DB_CONFIG)
+    return _Connection(raw)
+
+
+# roles.stream: 1 = Engineering, 2 = Arts
+_SCHEMA = [
+    "DROP TABLE IF EXISTS role_skills",
+    "DROP TABLE IF EXISTS roles",
+    "DROP TABLE IF EXISTS companies",
+    """CREATE TABLE IF NOT EXISTS companies (
+        id   INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        logo TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+    """CREATE TABLE IF NOT EXISTS roles (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        role_name  VARCHAR(255) NOT NULL,
+        stream     INT NOT NULL DEFAULT 1, 
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+    """CREATE TABLE IF NOT EXISTS role_skills (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        role_id    INT NOT NULL,
+        skill_name VARCHAR(255) NOT NULL,
+        priority   VARCHAR(20) NOT NULL,
+        FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+    """CREATE TABLE IF NOT EXISTS activity_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        `type` VARCHAR(50),
+        `timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
+        user_name VARCHAR(255),
+        company_name VARCHAR(255),
+        role_name VARCHAR(255),
+        academic_stream VARCHAR(100),
+        match_score INT,
+        matched_skills TEXT,
+        missing_skills TEXT,
+        ip VARCHAR(64)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+]
 
 
 def init_db():
     conn = get_db()
     c = conn.cursor()
 
-    c.executescript("""
-        DROP TABLE IF EXISTS role_skills;
-        DROP TABLE IF EXISTS roles;
-        DROP TABLE IF EXISTS companies;
-
-        CREATE TABLE IF NOT EXISTS companies (
-            id   INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL,
-            logo TEXT
-        );
-        CREATE TABLE IF NOT EXISTS roles (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            company_id INTEGER NOT NULL,
-            role_name  TEXT NOT NULL,
-            stream     INTEGER NOT NULL DEFAULT 1, -- 1: Eng, 2: Arts
-            FOREIGN KEY (company_id) REFERENCES companies(id)
-        );
-        CREATE TABLE IF NOT EXISTS role_skills (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            role_id    INTEGER NOT NULL,
-            skill_name TEXT NOT NULL,
-            priority   TEXT NOT NULL,
-            FOREIGN KEY (role_id) REFERENCES roles(id)
-        );
-        CREATE TABLE IF NOT EXISTS activity_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            type TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            user_name TEXT,
-            company_name TEXT,
-            role_name TEXT,
-            academic_stream TEXT,
-            match_score INTEGER,
-            matched_skills TEXT,
-            missing_skills TEXT,
-            ip TEXT
-        );
-    """)
+    for statement in _SCHEMA:
+        c.execute(statement)
 
     # Seed data
     seed_data = _expanded_seed_data()
     for company_name, company_info in seed_data.items():
-        c.execute("INSERT OR IGNORE INTO companies (name, logo) VALUES (?, ?)",
+        c.execute("INSERT IGNORE INTO companies (name, logo) VALUES (%s, %s)",
                   (company_name, company_info["logo"]))
-        c.execute("SELECT id FROM companies WHERE name = ?", (company_name,))
-        company_id = c.fetchone()[0]
+        c.execute("SELECT id FROM companies WHERE name = %s", (company_name,))
+        company_id = c.fetchone()["id"]
 
         for role_data in company_info["roles"]:
             role_name = clean_role_name(role_data["name"])
             stream = role_data["stream"]
             skill_groups = role_data["skills"]
 
-            c.execute("DELETE FROM roles WHERE company_id = ? AND role_name = ?",
+            c.execute("DELETE FROM roles WHERE company_id = %s AND role_name = %s",
                       (company_id, role_name))
-            c.execute("INSERT INTO roles (company_id, role_name, stream) VALUES (?, ?, ?)",
+            c.execute("INSERT INTO roles (company_id, role_name, stream) VALUES (%s, %s, %s)",
                       (company_id, role_name, stream))
             role_id = c.lastrowid
 
             for priority, skills in skill_groups.items():
                 for skill in skills:
-                    c.execute("INSERT INTO role_skills (role_id, skill_name, priority) VALUES (?, ?, ?)",
+                    c.execute("INSERT INTO role_skills (role_id, skill_name, priority) VALUES (%s, %s, %s)",
                               (role_id, skill, priority))
 
     conn.commit()
@@ -3026,7 +3063,7 @@ def get_all_companies(stream=None):
     if stream:
         rows = conn.execute(
             "SELECT DISTINCT c.id, c.name, c.logo FROM companies c "
-            "JOIN roles r ON c.id = r.company_id WHERE r.stream = ? ORDER BY c.name",
+            "JOIN roles r ON c.id = r.company_id WHERE r.stream = %s ORDER BY c.name",
             (stream,)
         ).fetchall()
     else:
@@ -3041,12 +3078,12 @@ def search_companies(query, stream=None):
         rows = conn.execute(
             "SELECT DISTINCT c.id, c.name, c.logo FROM companies c "
             "JOIN roles r ON c.id = r.company_id "
-            "WHERE LOWER(c.name) LIKE ? AND r.stream = ? ORDER BY c.name",
+            "WHERE LOWER(c.name) LIKE %s AND r.stream = %s ORDER BY c.name",
             (f"%{query.lower()}%", stream)
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, name, logo FROM companies WHERE LOWER(name) LIKE ? ORDER BY name",
+            "SELECT id, name, logo FROM companies WHERE LOWER(name) LIKE %s ORDER BY name",
             (f"%{query.lower()}%",)
         ).fetchall()
     conn.close()
@@ -3055,16 +3092,16 @@ def search_companies(query, stream=None):
 
 def get_roles_for_company(company_id, stream=None):
     conn = get_db()
-    company_row = conn.execute("SELECT name FROM companies WHERE id = ?", (company_id,)).fetchone()
+    company_row = conn.execute("SELECT name FROM companies WHERE id = %s", (company_id,)).fetchone()
     company_name = company_row["name"] if company_row else None
     if stream:
         rows = conn.execute(
-            "SELECT id, role_name FROM roles WHERE company_id = ? AND stream = ? ORDER BY role_name",
+            "SELECT id, role_name FROM roles WHERE company_id = %s AND stream = %s ORDER BY role_name",
             (company_id, stream)
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, role_name FROM roles WHERE company_id = ? ORDER BY role_name",
+            "SELECT id, role_name FROM roles WHERE company_id = %s ORDER BY role_name",
             (company_id,)
         ).fetchall()
     conn.close()
@@ -3085,7 +3122,7 @@ def get_skills_for_role(role_id):
     """Returns {'core': [...], 'good': [...], 'bonus': [...]}"""
     conn = get_db()
     rows = conn.execute(
-        "SELECT skill_name, priority FROM role_skills WHERE role_id = ?",
+        "SELECT skill_name, priority FROM role_skills WHERE role_id = %s",
         (role_id,)
     ).fetchall()
     conn.close()
@@ -3097,7 +3134,7 @@ def get_skills_for_role(role_id):
 
 def get_company_by_id(company_id):
     conn = get_db()
-    row = conn.execute("SELECT id, name, logo FROM companies WHERE id = ?", (company_id,)).fetchone()
+    row = conn.execute("SELECT id, name, logo FROM companies WHERE id = %s", (company_id,)).fetchone()
     conn.close()
     return dict(row) if row else None
 
@@ -3106,7 +3143,7 @@ def get_role_by_id(role_id):
     conn = get_db()
     row = conn.execute(
         "SELECT r.id, r.role_name, c.name as company_name, c.logo as company_logo "
-        "FROM roles r JOIN companies c ON r.company_id = c.id WHERE r.id = ?",
+        "FROM roles r JOIN companies c ON r.company_id = c.id WHERE r.id = %s",
         (role_id,)
     ).fetchone()
     conn.close()
@@ -3224,8 +3261,8 @@ def log_activity(activity_data):
     try:
         conn.execute("""
             INSERT INTO activity_log 
-            (type, user_name, company_name, role_name, academic_stream, match_score, matched_skills, missing_skills, ip)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (`type`, user_name, company_name, role_name, academic_stream, match_score, matched_skills, missing_skills, ip)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             activity_data.get('type'),
             activity_data.get('user_name'),
@@ -3247,7 +3284,7 @@ def get_activities(limit=100):
     """Retrieve recent activities from the database"""
     conn = get_db()
     try:
-        rows = conn.execute("SELECT * FROM activity_log ORDER BY timestamp DESC LIMIT ?", (limit,)).fetchall()
+        rows = conn.execute("SELECT * FROM activity_log ORDER BY `timestamp` DESC LIMIT %s", (limit,)).fetchall()
         activities = []
         for row in rows:
             d = dict(row)
@@ -3267,19 +3304,7 @@ def clear_all_activities():
         conn.commit()
     finally:
         conn.close()
-    # Simplified templates
-    if stream == 1:
-        return {
-            "core": ["data structures", "algorithms", "problem solving", "git", "java", "python"],
-            "good": ["system design", "cloud computing", "database management", "unit testing"],
-            "bonus": ["docker", "kubernetes", "microservices", "agile methodologies"]
-        }
-    else:
-        return {
-            "core": ["communication", "teamwork", "analytical thinking", "problem solving", "ms excel"],
-            "good": ["project management", "stakeholder management", "market research"],
-            "bonus": ["leadership", "strategic planning", "financial modeling"]
-        }
+
 
 if __name__ == "__main__":
     init_db()
