@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Select Your Stream — College2Corporate{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center align-items-center min-vh-75 mt-5">
+        <div class="col-md-10 text-center">
+            <h1 class="display-3 fw-bold mb-5 reveal-text text-white">
+                Choose Your Career Path
+            </h1>
+            
+            <div class="row g-4 mt-2">
+                <!-- Engineering Card -->
+                <div class="col-md-6">
+                    <a href="{{ url_for('set_stream', stream_id=1) }}" class="stream-card-link">
+                        <div class="stream-card glass-panel p-5 h-100 position-relative overflow-hidden">
+                            <div class="stream-icon mb-4">
+                                <i class="bi bi-cpu-fill display-1 text-primary"></i>
+                            </div>
+                            <h2 class="h1 fw-bold mb-3 text-white">Engineering</h2>
+                            <div class="stream-glow bg-primary"></div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Arts & Science Card -->
+                <div class="col-md-6">
+                    <a href="{{ url_for('set_stream', stream_id=2) }}" class="stream-card-link">
+                        <div class="stream-card glass-panel p-5 h-100 position-relative overflow-hidden">
+                            <div class="stream-icon mb-4">
+                                <i class="bi bi-palette-fill display-1 text-info"></i>
+                            </div>
+                            <h2 class="h1 fw-bold mb-3 text-white">Arts & Science</h2>
+                            <div class="stream-glow bg-info"></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stream-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        height: 100%;
+    }
+
+    .stream-card {
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stream-card:hover {
+        transform: translateY(-15px) scale(1.02);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .stream-glow {
+        position: absolute;
+        bottom: -50px;
+        right: -50px;
+        width: 150px;
+        height: 150px;
+        filter: blur(80px);
+        opacity: 0.1;
+        transition: opacity 0.5s ease;
+        z-index: 0;
+    }
+
+    .stream-card:hover .stream-glow {
+        opacity: 0.4;
+    }
+
+    .reveal-text {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: reveal 1s forwards cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @keyframes reveal {
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
