@@ -1,8 +1,10 @@
 import os
 import json
 import hmac
+import uuid
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from werkzeug.utils import secure_filename
 from database import (
     init_db, search_companies, get_all_companies,
     get_roles_for_company, get_skills_for_role,
@@ -106,8 +108,11 @@ def upload():
     if not company_id or not role_id:
         return redirect(url_for('search'))
 
-    company_id_int = int(company_id)
-    role_id_int = int(role_id)
+    try:
+        company_id_int = int(company_id)
+        role_id_int = int(role_id)
+    except (TypeError, ValueError):
+        return redirect(url_for('search'))
 
     company = get_company_by_id(company_id_int)
     role = get_role_by_id(role_id_int)
@@ -121,10 +126,12 @@ def upload():
         pdf_used = False
 
         # PDF-only resume parsing.
+        saved_name = None
         if 'resume' in request.files:
             file = request.files['resume']
             if file and file.filename and allowed_file(file.filename):
-                filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+                saved_name = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
+                filepath = os.path.join(UPLOAD_FOLDER, saved_name)
                 file.save(filepath)
                 parsed_skills, parse_success = try_pdf_extract(filepath)
                 if parse_success and parsed_skills:
@@ -172,16 +179,16 @@ def upload():
         
         # Extract user name from resume content
         user_name = "Unknown User"
-        if pdf_used and 'resume' in request.files:
+        if pdf_used and saved_name:
             try:
                 # Read the PDF content to extract name
-                import PyPDF2
-                filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+                from pypdf import PdfReader
+                filepath = os.path.join(UPLOAD_FOLDER, saved_name)
                 with open(filepath, 'rb') as f:
-                    reader = PyPDF2.PdfReader(f)
+                    reader = PdfReader(f)
                     text = ""
                     for page in reader.pages:
-                        text += page.extract_text()
+                        text += page.extract_text() or ""
                     
                     # Simple name extraction (first line that looks like a name)
                     lines = text.split('\n')
@@ -235,8 +242,8 @@ def upload():
         print(f"[DEBUG] Total activities in list: {len(user_activities)}")
         
         # Store resume content for later use in resume generation
-        if pdf_used and 'resume' in request.files:
-            session['resume_filename'] = file.filename
+        if pdf_used and saved_name:
+            session['resume_filename'] = saved_name
 
         return redirect(url_for('result'))
 
@@ -547,11 +554,16 @@ def restart():
 
 
 @app.route('/admin')
+def admin_entry():
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/dashboard')
 def admin_dashboard():
     print(f"[DEBUG] Admin dashboard accessed!")
     # Simple session-based admin authentication (set after a successful login)
     if not session.get('admin_authenticated'):
-        return render_template('admin_login.html')
+        return redirect(url_for('admin_entry'))
     
     try:
         # Calculate user analytics
@@ -643,13 +655,13 @@ def admin_login():
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('admin_authenticated', None)
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_entry'))
 
 
 @app.route('/admin/clear', methods=['POST'])
 def admin_clear():
     if not session.get('admin_authenticated'):
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_entry'))
     clear_all_activities()
     user_activities.clear()
     user_sessions.clear()
@@ -658,7 +670,7 @@ def admin_clear():
 
 @app.before_request
 def track_user():
-    if request.endpoint and request.endpoint not in ['admin_dashboard', 'admin_login', 'static']:
+    if request.endpoint and request.endpoint not in ['admin_entry', 'admin_dashboard', 'admin_login', 'static']:
         user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
         session_data = {
             'ip': user_ip,
@@ -679,4 +691,5 @@ if __name__ == '__main__':
     init_db()
     print("[*] Starting College to Corporate Skill Mapper...")
     print("    Open: http://127.0.0.1:5000")
-    app.run(debug=True, use_reloader=False)
+    # Set FLASK_DEBUG=1 in .env only while developing; debug mode exposes a code console.
+    app.run(debug=os.environ.get('FLASK_DEBUG') == '1', use_reloader=False)

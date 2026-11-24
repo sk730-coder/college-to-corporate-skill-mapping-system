@@ -5,6 +5,12 @@ import calendar
 import copy
 import re
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # ─── MySQL connection settings ───────────────────────────────────────────────
 # Override with environment variables (or a .env file loaded by your shell).
 DB_CONFIG = {

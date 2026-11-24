@@ -7,6 +7,9 @@
         <div class="col-12 text-center">
             <h1 class="display-4 fw-bold mb-3 text-white">Admin <span class="text-primary">Dashboard</span></h1>
             <p class="text-secondary fs-5">System overview and management</p>
+            <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-light mt-3">
+                <i class="bi bi-box-arrow-right me-2"></i>Log Out
+            </a>
         </div>
     </div>
 
@@ -173,7 +176,7 @@
                 </div>
                 <div class="mb-2">
                     <span class="text-secondary">Database:</span>
-                    <span class="text-white ms-2">SQLite</span>
+                    <span class="text-white ms-2">MySQL</span>
                 </div>
                 <div class="mb-2">
                     <span class="text-secondary">Environment:</span>
@@ -253,18 +256,14 @@
                                         <span class="text-danger small fw-bold">Missing Skills ({{ activity.get('missing_skills_list', [])|length }}):</span>
                                         <div class="small">
                                             {% if activity.get('missing_skills_list') %}
-                                                {% for skill in activity.get('missing_skills_list', [])[:3] %}
+                                                {% for skill in activity.get('missing_skills_list', []) %}
                                                 <span class="badge bg-danger bg-opacity-25 text-danger me-1">{{ skill }}</span>
                                                 {% endfor %}
-                                                {% if activity.get('missing_skills_list', [])|length > 3 %}
-                                                <span class="text-warning">+{{ activity.get('missing_skills_list', [])|length - 3 }} more</span>
-                                                {% endif %}
                                             {% else %}
                                                 <span class="text-warning">No missing skills data</span>
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <small class="text-warning">IP: {{ activity.get('ip', 'Unknown')[:8] }}...</small>
                                 </div>
                             </div>
                         </div>

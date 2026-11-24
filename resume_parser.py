@@ -106,6 +106,14 @@ def extract_skills_from_text(text: str) -> set:
             if re.search(pattern, normalized_text):
                 found.add(skill)
 
+    # Skills containing symbols (c++, c#, node.js, next.js, tcp/ip, ci/cd) are
+    # destroyed by the normalisation above, so match them on the original text.
+    for skill in SKILL_KEYWORDS:
+        if re.search(r'[+#./]', skill):
+            pattern = r'(?<![\w+#.])' + re.escape(skill) + r'(?![\w+#])'
+            if re.search(pattern, text_lower):
+                found.add(skill)
+
     # Additional extraction for common abbreviations and variations
     abbreviations = {
         'js': 'javascript',
