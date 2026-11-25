@@ -30,18 +30,20 @@ A Flask-based web application that helps students identify the skill gaps betwee
 2. Install the required Python packages:
 
    `pip install -r requirements.txt`
+                or
+   `python -m pip install -r requirements.txt`
 
-3. Create a MySQL user and configure database credentials.
+4. Create a MySQL user and configure database credentials.
 
-4. Copy `.env.example` and rename the copy to `.env`.
+5. Copy `.env.example` and rename the copy to `.env`.
 
-5. Update the `.env` file with your MySQL credentials.
+6. Update the `.env` file with your MySQL credentials.
 
-6. Run the application:
+7. Run the application:
 
    `python app.py`
 
-7. Open the local URL displayed in your terminal.
+8. Open the local URL displayed in your terminal.
 
 ## Database
 The application automatically creates the `skills_db` database and initializes its tables when the MySQL user has the necessary permissions.
