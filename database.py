@@ -2984,15 +2984,26 @@ class _Connection:
 
 
 def get_db():
-    raw = pymysql.connect(cursorclass=pymysql.cursors.DictCursor, **DB_CONFIG)
-    return _Connection(raw)
+    config = DB_CONFIG.copy()
+    database = config.pop("database")
+    
+    connection = pymysql.connect(
+        cursorclass=pymysql.cursors.DictCursor,
+        **config
+    )
+    
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"CREATE DATABASE IF NOT EXISTS `{database}` "
+            "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+        )
 
+    connection.select_db(database)
+    
+    return _Connection(connection)
 
 # roles.stream: 1 = Engineering, 2 = Arts
 _SCHEMA = [
-    "DROP TABLE IF EXISTS role_skills",
-    "DROP TABLE IF EXISTS roles",
-    "DROP TABLE IF EXISTS companies",
     """CREATE TABLE IF NOT EXISTS companies (
         id   INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL UNIQUE,
